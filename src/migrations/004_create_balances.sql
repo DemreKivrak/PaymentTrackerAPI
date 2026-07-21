@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS balances (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    current_balance NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    total_income NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    total_expense NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    debt_amount NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    updated_at TIMESTAMP DEFAULT NOW()
+);
