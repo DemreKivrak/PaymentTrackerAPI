@@ -2,9 +2,15 @@ import * as categoryRepository from "../repository/category.repository.js";
 
 export async function createCategory(req, res) {
   try {
-    const { name, type } = req.body;
+    const { name, type, userId, parentId, isDefault } = req.body;
 
-    const category = await categoryRepository.createCategory(name, type);
+    const category = await categoryRepository.createCategory(
+      name,
+      type,
+      userId ?? null,
+      parentId ?? null,
+      Boolean(isDefault),
+    );
 
     res.status(201).json(category);
   } catch (err) {
@@ -14,7 +20,9 @@ export async function createCategory(req, res) {
 
 export async function getCategories(req, res) {
   try {
-    const categories = await categoryRepository.getCategories();
+    const userId = req.query.userId ?? null;
+
+    const categories = await categoryRepository.getCategories(userId);
 
     res.status(200).json(categories);
   } catch (err) {
@@ -41,9 +49,16 @@ export async function getCategoryById(req, res) {
 export async function updateCategory(req, res) {
   try {
     const { id } = req.params;
-    const { name, type } = req.body;
+    const { name, type, userId, parentId, isDefault } = req.body;
 
-    const category = await categoryRepository.updateCategory(id, name, type);
+    const category = await categoryRepository.updateCategory(
+      id,
+      name,
+      type,
+      userId ?? null,
+      parentId ?? null,
+      Boolean(isDefault),
+    );
 
     if (!category) {
       return res.status(404).json({ message: "Category not found" });

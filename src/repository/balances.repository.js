@@ -82,6 +82,32 @@ export async function updateBalance(
   return result.rows[0];
 }
 
+export async function updateBalanceForTransaction(userId, type, amount) {
+  await ensureBalanceForUser(userId);
+
+  const sign = type === "income" ? 1 : -1;
+  const amountValue = Number(amount);
+
+  const result = await pool.query(
+    `
+      UPDATE balances
+      SET current_balance = current_balance + $1,
+          total_income = total_income + $2,
+          total_expense = total_expense + $3
+      WHERE user_id = $4
+      RETURNING *;
+    `,
+    [
+      sign * amountValue,
+      type === "income" ? amountValue : 0,
+      type === "expense" ? amountValue : 0,
+      userId,
+    ],
+  );
+
+  return result.rows[0];
+}
+
 export async function deleteBalance(id) {
   const result = await pool.query(
     `
@@ -93,4 +119,25 @@ export async function deleteBalance(id) {
   );
 
   return result.rows[0];
+}
+export async function ensureBalanceForUser(userId) {
+  const existing = await pool.query(
+    `SELECT * FROM balances WHERE user_id = $1;`,
+    [userId],
+  );
+
+  if (existing.rows[0]) {
+    return existing.rows[0];
+  }
+
+  const created = await pool.query(
+    `
+      INSERT INTO balances (user_id, current_balance, total_income, total_expense, debt_amount)
+      VALUES ($1, 0, 0, 0, 0)
+      RETURNING *;
+    `,
+    [userId],
+  );
+
+  return created.rows[0];
 }

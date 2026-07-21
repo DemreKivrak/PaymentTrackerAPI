@@ -1,4 +1,5 @@
 import { pool } from "../config/db.js";
+import * as balanceRepository from "./balances.repository.js";
 
 export async function createTransaction(
   userId,
@@ -9,13 +10,13 @@ export async function createTransaction(
   transactionDate,
 ) {
   const result = await pool.query(
-    `
-      INSERT INTO transactions (user_id, category_id, type, amount, description, transaction_date)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING *;
-    `,
+    `INSERT INTO transactions (user_id, category_id, type, amount, description, transaction_date)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     RETURNING *;`,
     [userId, categoryId, type, amount, description, transactionDate],
   );
+
+  await balanceRepository.updateBalanceForTransaction(userId, type, amount);
 
   return result.rows[0];
 }
