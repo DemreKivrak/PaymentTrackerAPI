@@ -1,0 +1,151 @@
+<!doctype html>
+<html>
+  <head> </head>
+  <body>
+    <div class="login">
+      <input placeholder="email" />
+      <input placeholder="password" />
+      <button onclick="login()">login</button>
+    </div>
+
+    <div class="create-account">
+      <input placeholder="name" />
+      <input placeholder="email" />
+      <input placeholder="password" />
+      <button onclick="register()">create account</button>
+    </div>
+
+    <style>
+      .create-account {
+        margin-top: 50px;
+      }
+    </style>
+
+    <script>
+      const API_BASE = window.location.origin || "http://localhost:5000";
+
+      function getToken() {
+        return localStorage.getItem("token");
+      }
+
+      function setMessage(element, text, isError = false) {
+        element.textContent = text;
+        element.style.color = isError ? "#fca5a5" : "#86efac";
+      }
+
+      async function login() {
+        const email = document.getElementById("loginEmail").value;
+        const password = document.getElementById("loginPassword").value;
+        const message = document.getElementById("loginMessage");
+
+        try {
+          const response = await fetch(`${API_BASE}/users/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          });
+
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.message || "Giriş başarısız");
+
+          localStorage.setItem("token", data.token);
+          setMessage(message, "Giriş başarılı. Profil yükleniyor...");
+          loadProfile();
+        } catch (error) {
+          setMessage(message, error.message, true);
+        }
+      }
+
+      async function register() {
+        const username = document.getElementById("registerName").value;
+        const email = document.getElementById("registerEmail").value;
+        const password = document.getElementById("registerPassword").value;
+        const message = document.getElementById("registerMessage");
+
+        try {
+          const response = await fetch(`${API_BASE}/users/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, email, password }),
+          });
+
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.message || "Kayıt başarısız");
+
+          setMessage(message, "Hesap oluşturuldu. Şimdi giriş yapabilirsiniz.");
+        } catch (error) {
+          setMessage(message, error.message, true);
+        }
+      }
+
+      async function loadProfile() {
+        const token = getToken();
+        const profileCard = document.getElementById("profileCard");
+        const profileInfo = document.getElementById("profileInfo");
+        const profileMessage = document.getElementById("profileMessage");
+
+        if (!token) {
+          profileCard.classList.add("hidden");
+          return;
+        }
+
+        try {
+          const response = await fetch(`${API_BASE}/users/me`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          const data = await response.json();
+          if (!response.ok)
+            throw new Error(data.message || "Profil yüklenemedi");
+
+          profileInfo.innerHTML = `
+            <p><strong>ID:</strong> ${data.id}</p>
+            <p><strong>Kullanıcı adı:</strong> ${data.username}</p>
+            <p><strong>E-posta:</strong> ${data.email}</p>
+          `;
+
+          document.getElementById("profileName").value = data.username;
+          document.getElementById("profileEmail").value = data.email;
+          profileCard.classList.remove("hidden");
+        } catch (error) {
+          setMessage(profileMessage, error.message, true);
+        }
+      }
+
+      async function saveProfile() {
+        const token = getToken();
+        const profileMessage = document.getElementById("profileMessage");
+        const username = document.getElementById("profileName").value;
+        const email = document.getElementById("profileEmail").value;
+
+        try {
+          const response = await fetch(`${API_BASE}/users/me`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ username, email }),
+          });
+
+          const data = await response.json();
+          if (!response.ok)
+            throw new Error(data.message || "Profil güncellenemedi");
+
+          setMessage(profileMessage, "Profil başarıyla güncellendi");
+          loadProfile();
+        } catch (error) {
+          setMessage(profileMessage, error.message, true);
+        }
+      }
+
+      function logout() {
+        localStorage.removeItem("token");
+        document.getElementById("profileCard").classList.add("hidden");
+        document.getElementById("profileMessage").textContent = "Çıkış yapıldı";
+      }
+
+      loadProfile();
+    </script>
+  </body>
+</html>

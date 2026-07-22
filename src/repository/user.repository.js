@@ -38,6 +38,19 @@ export async function getUserById(id) {
   return result.rows[0];
 }
 
+export async function getUserByEmail(email) {
+  const result = await pool.query(
+    `
+        SELECT *
+        FROM users
+        WHERE email = $1;
+        `,
+    [email],
+  );
+
+  return result.rows[0];
+}
+
 export async function updateUser(id, username, email) {
   const result = await pool.query(
     `

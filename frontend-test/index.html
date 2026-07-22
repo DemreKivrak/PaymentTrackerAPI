@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Payment Tracker API Tester</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family:
+          Inter,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+      }
+
+      body {
+        margin: 0;
+        background: #0f172a;
+        color: #f8fafc;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+
+      .panel {
+        background: #111827;
+        border: 1px solid #334155;
+        border-radius: 14px;
+        padding: 18px;
+        margin-bottom: 18px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      input,
+      button {
+        border-radius: 8px;
+        border: 1px solid #475569;
+        padding: 10px 12px;
+        font-size: 14px;
+      }
+
+      button {
+        background: #2563eb;
+        color: white;
+        cursor: pointer;
+      }
+
+      .response {
+        margin-top: 14px;
+        white-space: pre-wrap;
+        background: #020617;
+        border: 1px solid #334155;
+        border-radius: 10px;
+        padding: 12px;
+        min-height: 120px;
+        font-size: 13px;
+        overflow: auto;
+      }
+
+      .message {
+        margin-top: 10px;
+        font-size: 13px;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      .profile-box {
+        margin-top: 16px;
+        padding: 12px;
+        border: 1px solid #334155;
+        border-radius: 10px;
+        background: #020617;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <section class="panel">
+        <h2>Giriş / Profil</h2>
+
+        <div class="grid">
+          <input id="loginEmail" placeholder="E-posta" />
+          <input id="loginPassword" type="password" placeholder="Şifre" />
+          <button onclick="login()">Giriş yap</button>
+        </div>
+        <div id="loginMessage" class="message"></div>
+
+        <div class="grid" style="margin-top: 16px">
+          <input id="registerName" placeholder="Ad soyad" />
+          <input id="registerEmail" placeholder="E-posta" />
+          <input id="registerPassword" type="password" placeholder="Şifre" />
+          <button onclick="register()">Hesap oluştur</button>
+        </div>
+        <div id="registerMessage" class="message"></div>
+
+        <div id="profileCard" class="profile-box hidden">
+          <h3>Profil bilgileri</h3>
+          <div id="profileInfo"></div>
+
+          <div class="grid" style="margin-top: 12px">
+            <input id="profileName" placeholder="Yeni kullanıcı adı" />
+            <input id="profileEmail" placeholder="Yeni e-posta" />
+          </div>
+
+          <div class="actions">
+            <button onclick="saveProfile()">Bilgileri kaydet</button>
+            <button onclick="logout()" style="background: #475569">
+              Çıkış yap
+            </button>
+          </div>
+
+          <div id="profileMessage" class="message"></div>
+        </div>
+      </section>
+
+      <section class="panel" style="margin-top: 24px">
+        <h2>API Test</h2>
+
+        <div class="grid">
+          <input
+            id="baseUrl"
+            value="http://localhost:5000"
+            placeholder="API URL"
+          />
+        </div>
+
+        <section class="panel" data-resource="users" style="margin-top: 16px">
+          <h3>Kullanıcılar</h3>
+          <div class="grid">
+            <input data-name="id" placeholder="ID" />
+            <input data-name="username" placeholder="Kullanıcı adı" />
+            <input data-name="email" placeholder="E-posta" />
+            <input data-name="password" placeholder="Şifre" />
+          </div>
+          <div class="actions">
+            <button data-action="list">Tüm kullanıcıları getir</button>
+            <button data-action="create">Kullanıcı oluştur</button>
+            <button data-action="get">ID ile getir</button>
+            <button data-action="update">Güncelle</button>
+            <button data-action="delete">Sil</button>
+          </div>
+          <div class="response" id="users-response">
+            Cevap burada görünecek.
+          </div>
+        </section>
+
+        <section
+          class="panel"
+          data-resource="categories"
+          style="margin-top: 16px"
+        >
+          <h3>Kategoriler</h3>
+          <div class="grid">
+            <input data-name="id" placeholder="ID" />
+            <input data-name="name" placeholder="Kategori adı" />
+            <input data-name="type" placeholder="Tip (income/expense)" />
+            <input data-name="userId" placeholder="Kullanıcı ID" />
+            <input data-name="parentId" placeholder="Üst kategori ID" />
+            <input
+              data-name="isDefault"
+              placeholder="Varsayılan (true/false)"
+            />
+          </div>
+          <div class="actions">
+            <button data-action="list">Tüm kategorileri getir</button>
+            <button data-action="create">Kategori oluştur</button>
+            <button data-action="get">ID ile getir</button>
+            <button data-action="update">Güncelle</button>
+            <button data-action="delete">Sil</button>
+          </div>
+          <div class="response" id="categories-response">
+            Cevap burada görünecek.
+          </div>
+        </section>
+
+        <section
+          class="panel"
+          data-resource="transactions"
+          style="margin-top: 16px"
+        >
+          <h3>İşlemler</h3>
+          <div class="grid">
+            <input data-name="id" placeholder="ID" />
+            <input data-name="userId" placeholder="Kullanıcı ID" />
+            <input data-name="categoryId" placeholder="Kategori ID" />
+            <input data-name="type" placeholder="Tip (income/expense)" />
+            <input data-name="amount" placeholder="Tutar" />
+            <input data-name="description" placeholder="Açıklama" />
+            <input
+              data-name="transactionDate"
+              placeholder="Tarih (YYYY-MM-DD)"
+            />
+          </div>
+          <div class="actions">
+            <button data-action="list">Tüm işlemleri getir</button>
+            <button data-action="create">İşlem oluştur</button>
+            <button data-action="get">ID ile getir</button>
+            <button data-action="update">Güncelle</button>
+            <button data-action="delete">Sil</button>
+          </div>
+          <div class="response" id="transactions-response">
+            Cevap burada görünecek.
+          </div>
+        </section>
+
+        <section
+          class="panel"
+          data-resource="balances"
+          style="margin-top: 16px"
+        >
+          <h3>Bakiye</h3>
+          <div class="grid">
+            <input data-name="id" placeholder="ID" />
+            <input data-name="userId" placeholder="Kullanıcı ID" />
+            <input data-name="currentBalance" placeholder="Güncel bakiye" />
+            <input data-name="totalIncome" placeholder="Toplam gelir" />
+            <input data-name="totalExpense" placeholder="Toplam gider" />
+            <input data-name="debtAmount" placeholder="Borç miktarı" />
+          </div>
+          <div class="actions">
+            <button data-action="list">Tüm bakiyeleri getir</button>
+            <button data-action="create">Bakiye oluştur</button>
+            <button data-action="get">ID ile getir</button>
+            <button data-action="update">Güncelle</button>
+            <button data-action="delete">Sil</button>
+          </div>
+          <div class="response" id="balances-response">
+            Cevap burada görünecek.
+          </div>
+        </section>
+      </section>
+    </div>
+
+    <script>
+      const API_BASE = "http://localhost:5000";
+
+      function getToken() {
+        return localStorage.getItem("token");
+      }
+
+      function setMessage(element, text, isError = false) {
+        element.textContent = text;
+        element.style.color = isError ? "#fca5a5" : "#86efac";
+      }
+
+      async function login() {
+        const email = document.getElementById("loginEmail").value;
+        const password = document.getElementById("loginPassword").value;
+        const message = document.getElementById("loginMessage");
+
+        try {
+          const response = await fetch(`${API_BASE}/users/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          });
+
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.message || "Giriş başarısız");
+
+          localStorage.setItem("token", data.token);
+          setMessage(message, "Giriş başarılı. Profil yükleniyor...");
+          loadProfile();
+        } catch (error) {
+          setMessage(message, error.message, true);
+        }
+      }
+
+      async function register() {
+        const username = document.getElementById("registerName").value;
+        const email = document.getElementById("registerEmail").value;
+        const password = document.getElementById("registerPassword").value;
+        const message = document.getElementById("registerMessage");
+
+        try {
+          const response = await fetch(`${API_BASE}/users/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, email, password }),
+          });
+
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.message || "Kayıt başarısız");
+
+          setMessage(message, "Hesap oluşturuldu. Şimdi giriş yapabilirsiniz.");
+        } catch (error) {
+          setMessage(message, error.message, true);
+        }
+      }
+
+      async function loadProfile() {
+        const token = getToken();
+        const profileCard = document.getElementById("profileCard");
+        const profileInfo = document.getElementById("profileInfo");
+        const profileMessage = document.getElementById("profileMessage");
+
+        if (!token) {
+          profileCard.classList.add("hidden");
+          return;
+        }
+
+        try {
+          const response = await fetch(`${API_BASE}/users/me`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          const data = await response.json();
+          if (!response.ok)
+            throw new Error(data.message || "Profil yüklenemedi");
+
+          profileInfo.innerHTML = `
+            <p><strong>ID:</strong> ${data.id}</p>
+            <p><strong>Kullanıcı adı:</strong> ${data.username}</p>
+            <p><strong>E-posta:</strong> ${data.email}</p>
+          `;
+
+          document.getElementById("profileName").value = data.username;
+          document.getElementById("profileEmail").value = data.email;
+          profileCard.classList.remove("hidden");
+        } catch (error) {
+          setMessage(profileMessage, error.message, true);
+        }
+      }
+
+      async function saveProfile() {
+        const token = getToken();
+        const profileMessage = document.getElementById("profileMessage");
+        const username = document.getElementById("profileName").value;
+        const email = document.getElementById("profileEmail").value;
+
+        try {
+          const response = await fetch(`${API_BASE}/users/me`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ username, email }),
+          });
+
+          const data = await response.json();
+          if (!response.ok)
+            throw new Error(data.message || "Profil güncellenemedi");
+
+          setMessage(profileMessage, "Profil başarıyla güncellendi");
+          loadProfile();
+        } catch (error) {
+          setMessage(profileMessage, error.message, true);
+        }
+      }
+
+      function logout() {
+        localStorage.removeItem("token");
+        document.getElementById("profileCard").classList.add("hidden");
+        document.getElementById("profileMessage").textContent = "Çıkış yapıldı";
+      }
+
+      document
+        .querySelectorAll(".panel button[data-action]")
+        .forEach((button) => {
+          button.addEventListener("click", () => sendRequest(button));
+        });
+
+      async function sendRequest(button) {
+        const panel = button.closest(".panel");
+        const resource = panel.dataset.resource;
+        const action = button.dataset.action;
+        const responseBox = panel.querySelector(".response");
+        const baseUrl = document
+          .getElementById("baseUrl")
+          .value.trim()
+          .replace(/\/$/, "");
+
+        responseBox.textContent = "İstek gönderiliyor...";
+
+        try {
+          let url = `${baseUrl}/${resource}`;
+          let method = "GET";
+          let body = undefined;
+
+          const payload = collectPayload(panel);
+
+          if (action === "create") {
+            method = "POST";
+            body = JSON.stringify(payload);
+          } else if (action === "update") {
+            method = "PUT";
+            const id = payload.id;
+            delete payload.id;
+            if (!id) {
+              throw new Error("Güncelleme için ID giriniz.");
+            }
+            url = `${url}/${id}`;
+            body = JSON.stringify(payload);
+          } else if (action === "get") {
+            const id = payload.id;
+            if (!id) {
+              throw new Error("Getirme için ID giriniz.");
+            }
+            url = `${url}/${id}`;
+          } else if (action === "delete") {
+            method = "DELETE";
+            const id = payload.id;
+            if (!id) {
+              throw new Error("Silme için ID giriniz.");
+            }
+            url = `${url}/${id}`;
+          }
+
+          const options = { method, headers: {} };
+          if (body !== undefined) {
+            options.headers["Content-Type"] = "application/json";
+            options.body = body;
+          }
+
+          const response = await fetch(url, options);
+          const text = await response.text();
+          let data;
+
+          try {
+            data = text ? JSON.parse(text) : {};
+          } catch (error) {
+            data = text;
+          }
+
+          responseBox.textContent = JSON.stringify(
+            { status: response.status, data },
+            null,
+            2,
+          );
+        } catch (error) {
+          responseBox.textContent = `Hata: ${error.message}`;
+        }
+      }
+
+      function collectPayload(panel) {
+        const values = {};
+
+        panel.querySelectorAll("input").forEach((input) => {
+          const key = input.dataset.name;
+          if (!key) return;
+
+          let value = input.value.trim();
+          if (!value) return;
+
+          if (key === "id") {
+            values.id = value;
+            return;
+          }
+
+          if (
+            key === "amount" ||
+            key === "currentBalance" ||
+            key === "totalIncome" ||
+            key === "totalExpense" ||
+            key === "debtAmount"
+          ) {
+            values[key] = Number(value);
+            return;
+          }
+
+          if (key === "isDefault") {
+            values[key] = value.toLowerCase() === "true";
+            return;
+          }
+
+          values[key] = value;
+        });
+
+        return values;
+      }
+
+      loadProfile();
+    </script>
+  </body>
+</html>
